@@ -1,3 +1,6 @@
+#ifndef CHIP8_H
+#define CHIP8_H
+
 #define MEM_SIZE 4096
 #define STACK_SIZE 16
 #define NNN_MASK 0x0FFF
@@ -9,8 +12,6 @@
 #define DIS_HEIGHT 34
 #define SPR_WIDTH 8
 
-#ifndef CHIP8_H
-#define CHIP8_H
 class Chip8
 {
     unsigned char memory[MEM_SIZE];               // 4K memory

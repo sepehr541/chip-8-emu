@@ -40,12 +40,15 @@ void Chip8::initialize()
     // Clear stack
     for (size_t i = 0; i < 16; i++)
         stack[i] = 0;
+    
     // Clear registers V0-VF
     for (size_t i = 0; i < 16; i++)
         V[i] = 0;
+    
     // Clear memory
     for (size_t i = 0; i < MEM_SIZE; i++)
         memory[i] = 0;
+    
     // Load fontset
     for (int i = 0; i < 80; ++i)
         memory[0x50 + i] = chip8_fontset[i];

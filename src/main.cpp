@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 {
     // init display
     SDL_Init(SDL_INIT_VIDEO);
-    Display* display = new Display(64, 32, 8);
+    Display display(64, 32, 8);
 
     // init Chip8
     Chip8 chip8;
@@ -17,10 +17,9 @@ int main(int argc, char **argv)
     chip8.loadGame("pong2.c8");
 
     // emu loop
-    display->loop(&chip8);
+    display.loop(chip8);
 
     // clean up
-    delete display;
     SDL_Quit();
 
     return 0;

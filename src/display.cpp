@@ -40,7 +40,7 @@ int Display::mapKeyToIndex(SDL_Keycode key)
         return -1;
 }
 
-void Display::loop(Chip8 *chip8)
+void Display::loop(Chip8& chip8)
 {
     bool quit = false;
     SDL_Event event;
@@ -56,13 +56,13 @@ void Display::loop(Chip8 *chip8)
             break;
         case SDL_KEYDOWN:
         case SDL_KEYUP:
-            chip8->setKey(mapKeyToIndex(event.key.keysym.sym), event.type == SDL_KEYDOWN);
+            chip8.setKey(mapKeyToIndex(event.key.keysym.sym), event.type == SDL_KEYDOWN);
             break;
         }
-        chip8->emulateCycle();
-        if (chip8->getRefreshFlag())
+        chip8.emulateCycle();
+        if (chip8.getRefreshFlag())
         {
-            chip8->getGfx(pixels);
+            chip8.getGfx(pixels);
             SDL_UpdateTexture(texture, NULL, pixels, width * sizeof(Uint32));
         }
         SDL_RenderClear(renderer);

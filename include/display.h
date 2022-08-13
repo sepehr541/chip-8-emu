@@ -10,6 +10,6 @@ class Display
 public:
     Display(int width, int height, int scale);
     ~Display();
-    void loop(Chip8* chip8);
+    void loop(Chip8& chip8);
     int mapKeyToIndex(SDL_Keycode key);
 };
