@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <SDL.h>
-#include "chip8.h"
+#include "chip8.hpp"
 using namespace std;
 
 #define VX(opcode) V[(opcode & VX_MASK) >> 8]
@@ -62,7 +62,7 @@ void Chip8::initialize()
 
 void Chip8::emulateCycle()
 {
-    setRefreshFlag(0);
+    refreshFlag = false;
     // Fetch Opcode
     opcode = memory[pc] << 8 | memory[pc + 1];
     // Decode & Execute Opcode
@@ -72,6 +72,7 @@ void Chip8::emulateCycle()
         switch (opcode)
         {
         case 0x00E0: // clear display
+            memset(pixels, 0, sizeof(pixels));
             break;
         case 0x00EE: // return
             pc = stack[--sp];
@@ -211,6 +212,8 @@ void Chip8::emulateCycle()
         printf("invalid opcode %04x", opcode);
         break;
     }
+
+end_cycle:
     // Update timers
     delay_timer = max(delay_timer - 1, 0);
     sound_timer = max(sound_timer - 1, 0);
@@ -286,17 +289,12 @@ void Chip8::drawSprite(unsigned short opcode)
             }
         }
     }
-    setRefreshFlag(1);
+    refreshFlag = true;
 }
 
 char Chip8::getRefreshFlag()
 {
     return refreshFlag;
-}
-
-void Chip8::setRefreshFlag(char flag)
-{
-    refreshFlag = flag;
 }
 
 void Chip8::getGfx(Uint32 *result)

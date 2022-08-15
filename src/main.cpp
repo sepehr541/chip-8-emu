@@ -1,6 +1,6 @@
 #include <SDL.h>
-#include "display.h"
-#include "chip8.h"
+#include "display.hpp"
+#include "chip8.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
