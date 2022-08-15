@@ -53,7 +53,7 @@ public:
     /// Mark - Members
     ///
 
-private :
+private:
     // 4K memory
     uint8_t memory[MEM_SIZE];
 
@@ -117,7 +117,7 @@ public:
     ///
     /// copy video grpahics pixels to given array
     ///
-    uint32_t* getPixels();
+    uint32_t *getPixels();
 
     ///
     /// handle key release
@@ -142,6 +142,35 @@ public:
     ///
 
 private:
+    
+	typedef void (Chip8::*Chip8Func)();
+
+    // Operations
+    void Op0NNN();
+    void Op1NNN();
+    void Op2NNN();
+    void Op3XNN();
+    void Op4XNN();
+    void Op5XYN();
+    void Op6XNN();
+    void Op7XNN();
+    void Op8XYN();
+    void Op9XY0();
+    void OpANNN();
+    void OpBNNN();
+    void OpCXNN();
+    void OpDXYN();
+    void OpEXNN();
+    void OpFXNN();
+
+    // Op table
+    Chip8Func OpTable[17];
+    Chip8Func OpTable0[3];
+    Chip8Func OpTable8[16];
+    Chip8Func OpTableF[9];
+
+    void setupOpTable();
+
     void execALU(uint16_t opcode);
     void drawSprite(uint16_t opcode);
 };
