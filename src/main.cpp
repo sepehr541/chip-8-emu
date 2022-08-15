@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 {
     // init display
     SDL_Init(SDL_INIT_VIDEO);
-    Display display(64, 32, 8);
+    Display display(Chip8::DIS_WIDTH, Chip8::DIS_HEIGHT, 8);
 
     // init Chip8
     Chip8 chip8;

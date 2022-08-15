@@ -9,25 +9,10 @@ using namespace std;
 #define VY(opcode) V[(opcode & VY_MASK) >> 4]
 #define VF V[0xF]
 
-unsigned char chip8_fontset[80] =
-    {
-        0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
-        0x20, 0x60, 0x20, 0x20, 0x70, // 1
-        0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
-        0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-        0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-        0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-        0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-        0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-        0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-        0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
-        0xF0, 0x90, 0xF0, 0x90, 0x90, // A
-        0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-        0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-        0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-        0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-        0xF0, 0x80, 0xF0, 0x80, 0x80  // F
-};
+inline void setArrayToZero(void* array, uint32_t size)
+{
+    memset(array, 0, size);
+}
 
 void Chip8::initialize()
 {
@@ -36,28 +21,25 @@ void Chip8::initialize()
     I = 0;      // Reset index register
     sp = 0;     // Reset stack pointer
 
-    // Clear display
+    
     // Clear stack
-    for (size_t i = 0; i < 16; i++)
-        stack[i] = 0;
+    setArrayToZero(stack, STACK_SIZE);
     
     // Clear registers V0-VF
-    for (size_t i = 0; i < 16; i++)
-        V[i] = 0;
+    setArrayToZero(V, REGISTER_COUNT);
     
     // Clear memory
-    for (size_t i = 0; i < MEM_SIZE; i++)
-        memory[i] = 0;
+    setArrayToZero(memory, MEM_SIZE);
     
     // Load fontset
     for (int i = 0; i < 80; ++i)
         memory[0x50 + i] = chip8_fontset[i];
 
-   for (size_t i = 0; i < DIS_WIDTH * DIS_HEIGHT; i++)
-        pixels[i] = 0;
+    // Clear display
+    setArrayToZero(pixels, sizeof(pixels));
 
-    for (size_t i = 0; i < 16; i++)
-        key[i] = 0;
+    // Clear keys
+    setArrayToZero(keys, KEYS_COUNT);
 }
 
 void Chip8::emulateCycle()
@@ -72,12 +54,14 @@ void Chip8::emulateCycle()
         switch (opcode)
         {
         case 0x00E0: // clear display
-            memset(pixels, 0, sizeof(pixels));
+            setArrayToZero(pixels, sizeof(pixels));
             break;
         case 0x00EE: // return
             pc = stack[--sp];
             break;
         default: // 0x0NNN call machine routine at address NNN
+            stack[sp++] = pc + 2;
+            pc = opcode & NNN_MASK;
             break;
         }
         break;
@@ -89,70 +73,52 @@ void Chip8::emulateCycle()
         pc = opcode & NNN_MASK;
         break;
     case 0x3: // Skip next instr if VX == NN
-        if (VX(opcode) == (opcode & NN_MASK))
-            pc += 4;
-        else
-            pc += 2;
+        pc += VX(opcode) == (opcode & NN_MASK) ? 4 : 2;
         break;
     case 0x4: // Skip next instr if VX != NN
-        if (VX(opcode) != (opcode & NN_MASK))
-            pc += 4;
-        else
-            pc += 2;
+        pc += VX(opcode) != (opcode & NN_MASK) ? 4 : 2;
         break;
     case 0x5: // Skip next instr if VX == VY
-        if (VX(opcode) == VY(opcode))
-            pc += 4;
-        else
-            pc += 2;
+        pc += VX(opcode) == VY(opcode) ? 4 : 2;
         break;
-    case 0x6:
+    case 0x6: // Sets VX to NN.
         VX(opcode) = opcode & NN_MASK;
         pc += 2;
         break;
-    case 0x7:
+    case 0x7: // Adds NN to VX. (Carry flag is not changed)
         VX(opcode) += opcode & NN_MASK;
         pc += 2;
         break;
-    case 0x8:
+    case 0x8: // ALU
         execALU(opcode);
         pc += 2;
         break;
-    case 0x9:
-        if (VX(opcode) != VY(opcode))
-            pc += 4;
-        else
-            pc += 2;
+    case 0x9: // Skips the next instruction if VX does not equal VY.
+        pc += VX(opcode) != VY(opcode) ? 4 : 2;
         break;
-    case 0xA:
+    case 0xA: // Sets I to the address NNN. 
         I = opcode & NNN_MASK;
         pc += 2;
         break;
-    case 0xB:
+    case 0xB: // Jumps to the address NNN plus V0. 
         pc = V[0] + opcode & NNN_MASK;
         break;
-    case 0xC:
+    case 0xC: // Sets VX to the result of a bitwise AND operation on a random number and NN
         VX(opcode) = rand() & (opcode & NN_MASK);
         pc += 2;
         break;
-    case 0xD:
+    case 0xD: // Draws a sprite at coordinate (VX, VY) that has a width of 8 pixels and a height of N pixels.
         drawSprite(opcode);
         pc += 2;
         break;
-    case 0xE:
+    case 0xE: // Skips the next instruction if the key stored in VX is pressed.
         switch (opcode & NN_MASK)
         {
         case 0x9E:
-            if (key[VX(opcode)])
-                pc += 4;
-            else
-                pc += 2; 
+            pc += keys[VX(opcode)] ? 4 : 2;
             break;
         case 0xA1:
-            if (!key[VX(opcode)])
-                pc += 4;
-            else
-                pc += 2;
+            pc += !keys[VX(opcode)] ? 4 : 2;
             break;
         }
         break;
@@ -167,7 +133,7 @@ void Chip8::emulateCycle()
             // find pressed key and store it in Vx
             for (size_t i = 0; i < 16; i++)
             {
-                if (key[i])
+                if (keys[i])
                 {
                     pc += 2;
                     VX(opcode) = i;
@@ -176,7 +142,7 @@ void Chip8::emulateCycle()
             }
             // clear key presses
             for (size_t i = 0; i < 16; i++)
-                key[i] = 0;
+                keys[i] = 0;
             // add negative offset, when += 2 returns to this instruction, ie block
             pc -= 2;
             break;
@@ -258,14 +224,14 @@ void Chip8::execALU(unsigned short opcode)
     }
 }
 
-void Chip8::loadGame(char *game)
+void Chip8::loadGame(std::string game)
 {
     ifstream myfile;
     myfile.open(game, ios::binary);
     if (myfile.is_open())
         myfile.read((char *)&memory[0x200], 3584);
     else
-        printf("error loading game: %s", game);
+        std::cout << "error loading game: " << game << std::endl;
     myfile.close();
 }
 
@@ -274,38 +240,40 @@ void Chip8::drawSprite(unsigned short opcode)
     char x = VX(opcode) % DIS_WIDTH;
     char y = VY(opcode) % DIS_HEIGHT;
     VF = 0;
-    char rows = opcode & 0x000F;
-    for (size_t n = 0; n < rows; n++)
+    char height = opcode & 0x000F;
+    for (size_t row = 0; row < height; row++)
     {
-        char nthSpriteByte = memory[I + n];
+        uint8_t nthSpriteByte = memory[I + row];
         for (size_t p = 0; p < SPR_WIDTH; p++)
         {
-            char pixel = (nthSpriteByte >> (8 - p - 1)) & 1;
-            if (x + p <= DIS_WIDTH && y + n <= DIS_HEIGHT) // do not wrap
+            uint8_t pixel = nthSpriteByte & (0x80u >> p);
+            
+            // if pixel is 0, there would be no change
+            // we do not want to wrap if we go over the screen
+            if (pixel && x + p <= DIS_WIDTH && y + row <= DIS_HEIGHT)
             {
-                int offset = (y + n) * DIS_WIDTH + x + p;
-                VF |= pixels[offset] && pixel;
-                pixels[offset] ^= pixel;
+                int offset = (y + row) * DIS_WIDTH + x + p;
+                uint32_t videoPixel = pixels[offset];
+                VF |= (videoPixel == UINT32_MAX) && pixel;
+                pixels[offset] ^= UINT32_MAX;
             }
         }
     }
     refreshFlag = true;
 }
 
-char Chip8::getRefreshFlag()
+bool Chip8::getRefreshFlag()
 {
     return refreshFlag;
 }
 
-void Chip8::getGfx(Uint32 *result)
+uint32_t* Chip8::getPixels()
 {
-    int width = 64, height = 32;
-    for (size_t i = 0; i < width * height; i++)
-        result[i] = pixels[i] ? UINT32_MAX : 0;
+    return this->pixels;
 }
 
 void Chip8::setKey(int index, unsigned char state)
 {
     if (index > 0)
-        key[index] = state;
+        keys[index] = state;
 }

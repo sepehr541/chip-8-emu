@@ -1,49 +1,148 @@
 #ifndef CHIP8_H
 #define CHIP8_H
 
-#define MEM_SIZE 4096
-#define STACK_SIZE 16
-#define NNN_MASK 0x0FFF
-#define VX_MASK 0x0F00
-#define VY_MASK 0x00F0
-#define NN_MASK 0x00FF
-#define OP_SIZE 2
-#define DIS_WIDTH 64
-#define DIS_HEIGHT 34
-#define SPR_WIDTH 8
+#include <cstdint>
+#include <string>
 
 class Chip8
 {
-    unsigned char memory[MEM_SIZE];               // 4K memory
-    unsigned char V[16];                          // V0 - VF registers
-    unsigned short I;                             // 12-bit index register
-    unsigned short pc;                            // program counter
-    unsigned char pixels[DIS_WIDTH * DIS_HEIGHT]; // display pixels' state (1 or 0)
+public:
+    ///
+    /// Mark - Constant
+    ///
+
+    // Configurations
+    static constexpr uint32_t MEM_SIZE = 4096;
+    static constexpr uint32_t STACK_SIZE = 16;
+    static constexpr uint32_t REGISTER_COUNT = 16;
+    static constexpr uint32_t KEYS_COUNT = 16;
+
+    // Masks
+    static constexpr uint32_t NNN_MASK = 0x0FFF;
+    static constexpr uint32_t VX_MASK = 0x0F00;
+    static constexpr uint32_t VY_MASK = 0x00F0;
+    static constexpr uint32_t NN_MASK = 0x00FF;
+    static constexpr uint32_t OP_SIZE = 2;
+
+    // Display settings
+    static constexpr uint32_t DIS_WIDTH = 64;
+    static constexpr uint32_t DIS_HEIGHT = 34;
+    static constexpr uint32_t SPR_WIDTH = 8;
+
+    static constexpr uint8_t chip8_fontset[80] =
+        {
+            0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+            0x20, 0x60, 0x20, 0x20, 0x70, // 1
+            0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+            0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+            0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+            0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+            0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+            0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+            0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+            0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+            0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+            0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+            0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+            0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+            0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+            0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+    };
+
+    ///
+    /// Mark - Members
+    ///
+
+private :
+    // 4K memory
+    uint8_t memory[MEM_SIZE];
+
+    // V0 - VF registers
+    uint8_t V[REGISTER_COUNT];
+
+    // 12-bit index register
+    uint16_t I;
+
+    // program counter
+    uint16_t pc;
+
+    // display pixels' state, UINT32_MAX (on) or 0 (off)
+    uint32_t pixels[DIS_WIDTH * DIS_HEIGHT];
+
+    // flag for redraw
     bool refreshFlag;
 
     // timers
-    unsigned char delay_timer;
-    unsigned char sound_timer;
+    uint8_t delay_timer;
+    uint8_t sound_timer;
 
-    unsigned short stack[STACK_SIZE];
-    unsigned short sp;
+    // stack
+    uint16_t stack[STACK_SIZE];
 
-    unsigned char key[16];
+    // stack pointer
+    uint16_t sp;
 
-    unsigned short opcode;
+    // 0 - F key map
+    uint8_t keys[KEYS_COUNT];
+
+    // current opcode
+    uint16_t opcode;
+
+    ///
+    /// Mark - Functions
+    ///
 
 public:
+    ///
+    /// initialize the
+    ///
     void initialize();
+
+    ///
+    /// run a cycle
+    ///
     void emulateCycle();
-    void loadGame(char *game);
-    char getRefreshFlag();
-    void getGfx(Uint32*);
+
+    ///
+    /// load game into memory from ROM file
+    ///
+    void loadGame(std::string game);
+
+    ///
+    /// Get current refreshFlag
+    ///
+    /// @return refreshFlag
+    bool getRefreshFlag();
+
+    ///
+    /// copy video grpahics pixels to given array
+    ///
+    uint32_t* getPixels();
+
+    ///
+    /// handle key release
+    ///
     void handleKeyUp();
+
+    ///
+    /// handle key press
+    ///
     void handleKeyDown();
-    void setKey(int index, unsigned char state);
+
+    ///
+    /// set key state in key map
+    ///
+    /// @param index index of the key (0 - F)
+    /// @param state state of the key (up or down)
+    ///
+    void setKey(int index, uint8_t state);
+
+    ///
+    /// Mark - Helpers
+    ///
 
 private:
-    void execALU(unsigned short opcode);
-    void drawSprite(unsigned short opcode);
+    void execALU(uint16_t opcode);
+    void drawSprite(uint16_t opcode);
 };
 #endif

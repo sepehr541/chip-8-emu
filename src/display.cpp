@@ -44,7 +44,7 @@ void Display::loop(Chip8 &chip8)
 {
     bool quit = false;
     SDL_Event event;
-    Uint32 *pixels = new Uint32[width * height];
+    Uint32 *pixels = chip8.getPixels();
     // handle events
     while (!quit)
     {
@@ -66,7 +66,6 @@ void Display::loop(Chip8 &chip8)
         
         if (chip8.getRefreshFlag())
         {
-            chip8.getGfx(pixels);
             SDL_UpdateTexture(texture, NULL, pixels, width * sizeof(Uint32));
             SDL_RenderClear(renderer);
             SDL_RenderCopy(renderer, texture, NULL, NULL);
