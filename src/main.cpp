@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <backward.hpp>
 
 // arg[0] = "chip-8"
 // arg[1] = path to ROM file
@@ -11,6 +12,9 @@
 
 int main(int argc, char **argv)
 {
+    uint8_t* ptr = 0x0;
+    *ptr = 1;
+
     // init display
     SDL_Init(SDL_INIT_VIDEO);
     Display display(Chip8::DIS_WIDTH, Chip8::DIS_HEIGHT, 8);
