@@ -1,5 +1,6 @@
 #include <SDL.h>
 #include <iostream>
+#include <chrono>
 #include "display.hpp"
 #include "chip8.hpp"
 
@@ -40,30 +41,37 @@ int Display::mapKeyToIndex(SDL_Keycode key)
         return -1;
 }
 
+bool Display::handleEvents(Chip8 &chip8)
+{
+    SDL_Event event;
+    while (SDL_PollEvent(&event) > 0)
+    {
+        switch (event.type)
+        {
+        case SDL_QUIT:
+            return true;
+        case SDL_KEYDOWN:
+        case SDL_KEYUP:
+            chip8.setKey(mapKeyToIndex(event.key.keysym.sym), event.type == SDL_KEYDOWN);
+            break;
+        }
+    }
+    return false;
+}
+
 void Display::loop(Chip8 &chip8)
 {
     bool quit = false;
-    SDL_Event event;
     Uint32 pixels[Chip8::DIS_PIXELS];
     // handle events
     while (!quit)
     {
-        Uint32 start = SDL_GetTicks();
-        if (SDL_PollEvent(&event))
-        {
-            switch (event.type)
-            {
-            case SDL_QUIT:
-                quit = true;
-                break;
-            case SDL_KEYDOWN:
-            case SDL_KEYUP:
-                chip8.setKey(mapKeyToIndex(event.key.keysym.sym), event.type == SDL_KEYDOWN);
-                break;
-            }
-        }
-        chip8.emulateCycle();
+        SDL_PumpEvents();
+        quit = handleEvents(chip8);
+        SDL_FlushEvents(SDL_KEYDOWN, SDL_KEYUP);
         
+        chip8.emulateCycle();
+
         if (chip8.getRefreshFlag())
         {
             chip8.getPixels(pixels);

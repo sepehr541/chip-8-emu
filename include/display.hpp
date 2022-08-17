@@ -12,4 +12,5 @@ public:
     ~Display();
     void loop(Chip8& chip8);
     int mapKeyToIndex(SDL_Keycode key);
+    bool handleEvents(Chip8 &chip8);
 };

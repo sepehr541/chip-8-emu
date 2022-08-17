@@ -6,6 +6,42 @@
 #include <vector>
 #include <unordered_map>
 
+///
+/// Clock structure that will tick at given frequency
+///
+struct Clock
+{
+    bool ticked = false;
+
+    // in ms
+    float delay;
+
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+
+    Clock(){}
+
+    Clock(int frequency)
+    {
+        delay = 1000.0 / frequency;
+    }
+
+    void tick()
+    {
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        auto dt = std::chrono::duration<float, std::chrono::milliseconds::period>(currentTime - start).count();
+
+        if (dt >= delay)
+        {
+            ticked = true;
+            start = currentTime;
+        }
+        else
+        {
+            ticked = false;
+        }
+    }
+};
+
 class Chip8
 {
 public:
@@ -82,6 +118,9 @@ private:
     uint8_t delay_timer;
     uint8_t sound_timer;
 
+    // 60Hz clock for timers
+    Clock clock;
+
     // stack
     std::vector<uint16_t> stack;
 
@@ -98,7 +137,7 @@ private:
     /// Mark - Constuctors
     ///
 public:
-    Chip8() : memory(MEM_SIZE, 0), registers(REGISTER_COUNT, 0), pixels(DIS_PIXELS, 0), stack(STACK_SIZE, 0), keys(KEYS_COUNT, 0){};
+    Chip8() : memory(MEM_SIZE, 0), registers(REGISTER_COUNT, 0), pixels(DIS_PIXELS, 0), stack(STACK_SIZE, 0), keys(KEYS_COUNT, 0), clock(60) {};
 
     ///
     /// Mark - Functions
@@ -129,7 +168,7 @@ public:
     ///
     /// copy video grpahics pixels to given array
     ///
-    void getPixels(uint32_t * dst);
+    void getPixels(uint32_t *dst);
 
     ///
     /// handle key release
@@ -148,6 +187,11 @@ public:
     /// @param state state of the key (up or down)
     ///
     void setKey(int index, uint8_t state);
+
+    ///
+    /// decrement the timers at 60Hz
+    ///
+    void decTimers();
 
     ///
     /// Mark - Helpers
@@ -206,17 +250,16 @@ private:
     void Op8XY7();
     void Op8XYE();
 
-    std::unordered_map<uint16_t, Chip8Func> OpTable8XY
-    {
-        { 0x0 ,&Chip8::Op8XY0 },
-        { 0x1 ,&Chip8::Op8XY1 },
-        { 0x2 ,&Chip8::Op8XY2 },
-        { 0x3 ,&Chip8::Op8XY3 },
-        { 0x4 ,&Chip8::Op8XY4 },
-        { 0x5 ,&Chip8::Op8XY5 },
-        { 0x6 ,&Chip8::Op8XY6 },
-        { 0x7 ,&Chip8::Op8XY7 },
-        { 0xE ,&Chip8::Op8XYE },
+    std::unordered_map<uint16_t, Chip8Func> OpTable8XY{
+        {0x0, &Chip8::Op8XY0},
+        {0x1, &Chip8::Op8XY1},
+        {0x2, &Chip8::Op8XY2},
+        {0x3, &Chip8::Op8XY3},
+        {0x4, &Chip8::Op8XY4},
+        {0x5, &Chip8::Op8XY5},
+        {0x6, &Chip8::Op8XY6},
+        {0x7, &Chip8::Op8XY7},
+        {0xE, &Chip8::Op8XYE},
     };
 
     // Op 0***
@@ -224,12 +267,10 @@ private:
     void Op00E0();
     void Op00EE();
 
-
-    std::unordered_map<uint16_t, Chip8Func> OpTable0
-    {
+    std::unordered_map<uint16_t, Chip8Func> OpTable0{
         // { 0x0, &Chip8::Op0NNN },
-        { 0x00E0, &Chip8::Op00E0 },
-        { 0x00EE, &Chip8::Op00EE },
+        {0x00E0, &Chip8::Op00E0},
+        {0x00EE, &Chip8::Op00EE},
     };
 
     ///
@@ -238,10 +279,9 @@ private:
     void OpEX9E();
     void OpEXA1();
 
-    std::unordered_map<uint16_t, Chip8Func> OpTableEX
-    {
-        { 0x9E, &Chip8::OpEX9E},
-        { 0xA1, &Chip8::OpEXA1},
+    std::unordered_map<uint16_t, Chip8Func> OpTableEX{
+        {0x9E, &Chip8::OpEX9E},
+        {0xA1, &Chip8::OpEXA1},
     };
 
     ///
@@ -258,16 +298,16 @@ private:
     void OpFX65();
 
     std::unordered_map<uint16_t, Chip8Func> OpTableFX = {
-        { 0x07, &Chip8::OpFX07 },
-        { 0x0A, &Chip8::OpFX0A },
-        { 0x15, &Chip8::OpFX15 },
-        { 0x18, &Chip8::OpFX18 },
-        { 0x1E, &Chip8::OpFX1E },
-        { 0x29, &Chip8::OpFX29 },
-        { 0x33, &Chip8::OpFX33 },
-        { 0x55, &Chip8::OpFX55 },
-        { 0x65, &Chip8::OpFX65 },
-        };
+        {0x07, &Chip8::OpFX07},
+        {0x0A, &Chip8::OpFX0A},
+        {0x15, &Chip8::OpFX15},
+        {0x18, &Chip8::OpFX18},
+        {0x1E, &Chip8::OpFX1E},
+        {0x29, &Chip8::OpFX29},
+        {0x33, &Chip8::OpFX33},
+        {0x55, &Chip8::OpFX55},
+        {0x65, &Chip8::OpFX65},
+    };
 
     void drawSprite(uint16_t opcode);
 
@@ -307,7 +347,7 @@ private:
     {
         return registers.at(getX());
     };
-    
+
     inline uint8_t getRegisterAtY()
     {
         return registers.at(getY());
