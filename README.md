@@ -21,3 +21,9 @@ This project requires:
 
 The executable is located at `build/bin/chip-8`.
 NOTE: all the keys (0-F) are mapped to each character on the keyboard (ie 0 is 0, C is C, etc.).
+
+### Copyright
+
+see LICENSE.md for project license.
+
+**All the ROM files are copyrighted by their respective owner and I do NOT own any rights over their work. Please refer to the author.**
