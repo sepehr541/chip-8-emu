@@ -51,44 +51,14 @@ void Chip8::loadGame(std::string game)
     myfile.close();
 }
 
-void Chip8::drawSprite(uint16_t opcode)
-{
-    uint8_t x = getRegisterAtX() % DIS_WIDTH;
-    uint8_t y = getRegisterAtY() % DIS_HEIGHT;
-    registers[0xF] = 0;
-    uint8_t height = opcode & 0x000F;
-    for (int row = 0; row < height; row++)
-    {
-        uint8_t nthSpriteByte = memory[I + row];
-        for (int p = 0; p < SPR_WIDTH; p++)
-        {
-            uint8_t pixel = nthSpriteByte & (0x80u >> p);
-
-            // if pixel is 0, there would be no change
-            // we do not want to wrap if we go over the screen
-            uint8_t i = (x + p) % DIS_WIDTH;
-            uint8_t j = (y + row) % DIS_HEIGHT;
-            if (pixel)
-            {
-                uint32_t offset = j * DIS_WIDTH + i;
-                uint32_t videoPixel = pixels.at(offset);
-                registers[0xf] |= (videoPixel == UINT32_MAX) && pixel;
-                pixels[offset] ^= UINT32_MAX;
-            }
-        }
-    }
-    refreshFlag = true;
-}
-
 bool Chip8::getRefreshFlag()
 {
     return refreshFlag;
 }
 
-void Chip8::getPixels(uint32_t * dst)
+std::vector<uint32_t>& Chip8::getPixels()
 {
-    for(uint32_t i = 0; i < pixels.size(); i++)
-        dst[i] = pixels[i];
+    return this->pixels;
 }
 
 void Chip8::setKey(int index, uint8_t state)

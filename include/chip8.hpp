@@ -6,41 +6,7 @@
 #include <vector>
 #include <unordered_map>
 
-///
-/// Clock structure that will tick at given frequency
-///
-struct Clock
-{
-    bool ticked = false;
-
-    // in ms
-    float delay;
-
-    std::chrono::time_point<std::chrono::high_resolution_clock> start;
-
-    Clock(){}
-
-    Clock(int frequency)
-    {
-        delay = 1000.0 / frequency;
-    }
-
-    void tick()
-    {
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        auto dt = std::chrono::duration<float, std::chrono::milliseconds::period>(currentTime - start).count();
-
-        if (dt >= delay)
-        {
-            ticked = true;
-            start = currentTime;
-        }
-        else
-        {
-            ticked = false;
-        }
-    }
-};
+#include "clock.hpp"
 
 class Chip8
 {
@@ -68,9 +34,9 @@ public:
     static constexpr uint32_t DIS_WIDTH = 64;
     static constexpr uint32_t DIS_HEIGHT = 34;
     static constexpr uint32_t DIS_PIXELS = DIS_WIDTH * DIS_HEIGHT;
-
     static constexpr uint32_t SPR_WIDTH = 8;
 
+    // fontset
     static constexpr uint8_t chip8_fontset[80] =
         {
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -166,19 +132,9 @@ public:
     bool getRefreshFlag();
 
     ///
-    /// copy video grpahics pixels to given array
+    /// get graphics pixels
     ///
-    void getPixels(uint32_t *dst);
-
-    ///
-    /// handle key release
-    ///
-    void handleKeyUp();
-
-    ///
-    /// handle key press
-    ///
-    void handleKeyDown();
+    std::vector<uint32_t>& getPixels();
 
     ///
     /// set key state in key map
@@ -198,6 +154,7 @@ public:
     ///
 
 private:
+    // type alias for pointer-to-member-function for Chip-8 class
     typedef void (Chip8::*Chip8Func)();
 
     // Operations
@@ -239,7 +196,9 @@ private:
             &Chip8::OpFX,
     };
 
+    ///
     // ALU 8XY*
+    ///
     void Op8XY0();
     void Op8XY1();
     void Op8XY2();
@@ -262,8 +221,13 @@ private:
         {0xE, &Chip8::Op8XYE},
     };
 
+    ///
     // Op 0***
+    ///
+    
+    // ignoring call to machine function
     // void Op0NNN();
+    
     void Op00E0();
     void Op00EE();
 
@@ -309,8 +273,12 @@ private:
         {0x65, &Chip8::OpFX65},
     };
 
-    void drawSprite(uint16_t opcode);
-
+    /// 
+    /// bound check the index given for register
+    ///
+    /// @param index index of the register to access
+    /// @throws error if out of bound
+    ///
     inline void boundCheckRegisters(uint32_t index)
     {
         if (index < 0 || index > REGISTER_COUNT - 1)
@@ -319,16 +287,31 @@ private:
         }
     }
 
+    ///
+    /// get the value of X from opcode NXYN
+    /// 
+    /// @returns the value of X from opcode
+    ///
     inline uint32_t getX()
     {
         return (opcode & VX_MASK) >> VX_SHIFT;
     }
 
+    ///
+    /// get the value of Y from opcode NXYN
+    /// 
+    /// @returns the value of Y from opcode
+    ///
     inline uint32_t getY()
     {
         return (opcode & VY_MASK) >> VY_SHIFT;
     }
 
+    ///
+    /// set the register indexed by X from opcode NXYN to value
+    /// 
+    /// @param value value to put in register
+    ///
     inline void setRegisterAtX(uint8_t value)
     {
         uint32_t index = getX();
@@ -336,6 +319,12 @@ private:
         registers[index] = value;
     };
 
+
+    ///
+    /// set the register indexed by Y from opcode NXYN to value
+    /// 
+    /// @param value value to put in register
+    ///
     inline void setRegisterAtY(uint8_t value)
     {
         uint32_t index = getY();
@@ -343,16 +332,31 @@ private:
         registers[index] = value;
     };
 
+    ///
+    /// get the register indexed by X from opcode NXYN to value
+    /// 
+    /// @returns value in register at index X
+    ///
     inline uint8_t getRegisterAtX()
     {
         return registers.at(getX());
     };
 
+    ///
+    /// get the register indexed by Y from opcode NXYN to value
+    /// 
+    /// @returns value in register at index Y
+    ///
     inline uint8_t getRegisterAtY()
     {
         return registers.at(getY());
     };
 
+    ///
+    /// set register at indexed 0xF (the flag register)
+    /// 
+    /// @param value value to set the register to
+    ///
     inline void setFlagRegister(uint8_t value)
     {
         registers[0xF] = value;

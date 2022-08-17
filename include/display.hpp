@@ -1,5 +1,11 @@
+#ifndef DISPLAY_H
+#define DISPLAY_H
+
 #include <SDL.h>
+#include <string>
+
 #include "chip8.hpp"
+
 class Display
 {
     SDL_Window* window;
@@ -8,9 +14,9 @@ class Display
     int width, height, scale;
 
 public:
-    Display(int width, int height, int scale);
+    Display(std::string title, int width, int height, int scale);
     ~Display();
-    void loop(Chip8& chip8);
-    int mapKeyToIndex(SDL_Keycode key);
-    bool handleEvents(Chip8 &chip8);
+    void draw(Uint32* pixels);
 };
+
+#endif
