@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.22.3)
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_BUILD_TYPE Debug)
+set (CMAKE_CXX_STANDARD 17)
 
 project(chip-8)
 
@@ -11,6 +12,11 @@ add_executable(
     src/main.cpp
     src/display.cpp
     src/chip8.cpp
+    src/chip8.Ops.cpp
+    src/chip8.Op0.cpp
+    src/chip8.Op8XY.cpp
+    src/chip8.OpEX.cpp
+    src/chip8.OpFX.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE include/)

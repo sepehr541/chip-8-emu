@@ -1,6 +1,5 @@
 [requires]
 sdl/2.0.20
-backward-cpp/1.6
 
 [generators]
 cmake

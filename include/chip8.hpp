@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
+#include <unordered_map>
 
 class Chip8
 {
@@ -21,12 +23,16 @@ public:
     static constexpr uint32_t NNN_MASK = 0x0FFF;
     static constexpr uint32_t VX_MASK = 0x0F00;
     static constexpr uint32_t VY_MASK = 0x00F0;
+    static constexpr uint32_t VX_SHIFT = 8u;
+    static constexpr uint32_t VY_SHIFT = 4u;
     static constexpr uint32_t NN_MASK = 0x00FF;
     static constexpr uint32_t OP_SIZE = 2;
 
     // Display settings
     static constexpr uint32_t DIS_WIDTH = 64;
     static constexpr uint32_t DIS_HEIGHT = 34;
+    static constexpr uint32_t DIS_PIXELS = DIS_WIDTH * DIS_HEIGHT;
+
     static constexpr uint32_t SPR_WIDTH = 8;
 
     static constexpr uint8_t chip8_fontset[80] =
@@ -55,10 +61,10 @@ public:
 
 private:
     // 4K memory
-    uint8_t memory[MEM_SIZE];
+    std::vector<uint8_t> memory;
 
     // V0 - VF registers
-    uint8_t V[REGISTER_COUNT];
+    std::vector<uint8_t> registers;
 
     // 12-bit index register
     uint16_t I;
@@ -67,7 +73,7 @@ private:
     uint16_t pc;
 
     // display pixels' state, UINT32_MAX (on) or 0 (off)
-    uint32_t pixels[DIS_WIDTH * DIS_HEIGHT];
+    std::vector<uint32_t> pixels;
 
     // flag for redraw
     bool refreshFlag;
@@ -77,16 +83,22 @@ private:
     uint8_t sound_timer;
 
     // stack
-    uint16_t stack[STACK_SIZE];
+    std::vector<uint16_t> stack;
 
     // stack pointer
     uint16_t sp;
 
     // 0 - F key map
-    uint8_t keys[KEYS_COUNT];
+    std::vector<uint8_t> keys;
 
     // current opcode
     uint16_t opcode;
+
+    ///
+    /// Mark - Constuctors
+    ///
+public:
+    Chip8() : memory(MEM_SIZE, 0), registers(REGISTER_COUNT, 0), pixels(DIS_PIXELS, 0), stack(STACK_SIZE, 0), keys(KEYS_COUNT, 0){};
 
     ///
     /// Mark - Functions
@@ -117,7 +129,7 @@ public:
     ///
     /// copy video grpahics pixels to given array
     ///
-    uint32_t *getPixels();
+    void getPixels(uint32_t * dst);
 
     ///
     /// handle key release
@@ -142,11 +154,10 @@ public:
     ///
 
 private:
-    
-	typedef void (Chip8::*Chip8Func)();
+    typedef void (Chip8::*Chip8Func)();
 
     // Operations
-    void Op0NNN();
+    void Op0();
     void Op1NNN();
     void Op2NNN();
     void Op3XNN();
@@ -154,24 +165,157 @@ private:
     void Op5XYN();
     void Op6XNN();
     void Op7XNN();
-    void Op8XYN();
+    void Op8XY();
     void Op9XY0();
     void OpANNN();
     void OpBNNN();
     void OpCXNN();
     void OpDXYN();
-    void OpEXNN();
-    void OpFXNN();
+    void OpEX();
+    void OpFX();
 
     // Op table
-    Chip8Func OpTable[17];
-    Chip8Func OpTable0[3];
-    Chip8Func OpTable8[16];
-    Chip8Func OpTableF[9];
+    Chip8Func OpTable[17] =
+        {
+            &Chip8::Op0,
+            &Chip8::Op1NNN,
+            &Chip8::Op2NNN,
+            &Chip8::Op3XNN,
+            &Chip8::Op4XNN,
+            &Chip8::Op5XYN,
+            &Chip8::Op6XNN,
+            &Chip8::Op7XNN,
+            &Chip8::Op8XY,
+            &Chip8::Op9XY0,
+            &Chip8::OpANNN,
+            &Chip8::OpBNNN,
+            &Chip8::OpCXNN,
+            &Chip8::OpDXYN,
+            &Chip8::OpEX,
+            &Chip8::OpFX,
+    };
 
-    void setupOpTable();
+    // ALU 8XY*
+    void Op8XY0();
+    void Op8XY1();
+    void Op8XY2();
+    void Op8XY3();
+    void Op8XY4();
+    void Op8XY5();
+    void Op8XY6();
+    void Op8XY7();
+    void Op8XYE();
 
-    void execALU(uint16_t opcode);
+    std::unordered_map<uint16_t, Chip8Func> OpTable8XY
+    {
+        { 0x0 ,&Chip8::Op8XY0 },
+        { 0x1 ,&Chip8::Op8XY1 },
+        { 0x2 ,&Chip8::Op8XY2 },
+        { 0x3 ,&Chip8::Op8XY3 },
+        { 0x4 ,&Chip8::Op8XY4 },
+        { 0x5 ,&Chip8::Op8XY5 },
+        { 0x6 ,&Chip8::Op8XY6 },
+        { 0x7 ,&Chip8::Op8XY7 },
+        { 0xE ,&Chip8::Op8XYE },
+    };
+
+    // Op 0***
+    // void Op0NNN();
+    void Op00E0();
+    void Op00EE();
+
+
+    std::unordered_map<uint16_t, Chip8Func> OpTable0
+    {
+        // { 0x0, &Chip8::Op0NNN },
+        { 0x00E0, &Chip8::Op00E0 },
+        { 0x00EE, &Chip8::Op00EE },
+    };
+
+    ///
+    // Op EX**
+    ///
+    void OpEX9E();
+    void OpEXA1();
+
+    std::unordered_map<uint16_t, Chip8Func> OpTableEX
+    {
+        { 0x9E, &Chip8::OpEX9E},
+        { 0xA1, &Chip8::OpEXA1},
+    };
+
+    ///
+    // Op FX**
+    ///
+    void OpFX07();
+    void OpFX0A();
+    void OpFX15();
+    void OpFX18();
+    void OpFX1E();
+    void OpFX29();
+    void OpFX33();
+    void OpFX55();
+    void OpFX65();
+
+    std::unordered_map<uint16_t, Chip8Func> OpTableFX = {
+        { 0x07, &Chip8::OpFX07 },
+        { 0x0A, &Chip8::OpFX0A },
+        { 0x15, &Chip8::OpFX15 },
+        { 0x18, &Chip8::OpFX18 },
+        { 0x1E, &Chip8::OpFX1E },
+        { 0x29, &Chip8::OpFX29 },
+        { 0x33, &Chip8::OpFX33 },
+        { 0x55, &Chip8::OpFX55 },
+        { 0x65, &Chip8::OpFX65 },
+        };
+
     void drawSprite(uint16_t opcode);
+
+    inline void boundCheckRegisters(uint32_t index)
+    {
+        if (index < 0 || index > REGISTER_COUNT - 1)
+        {
+            throw "Bad Register Index";
+        }
+    }
+
+    inline uint32_t getX()
+    {
+        return (opcode & VX_MASK) >> VX_SHIFT;
+    }
+
+    inline uint32_t getY()
+    {
+        return (opcode & VY_MASK) >> VY_SHIFT;
+    }
+
+    inline void setRegisterAtX(uint8_t value)
+    {
+        uint32_t index = getX();
+        boundCheckRegisters(index);
+        registers[index] = value;
+    };
+
+    inline void setRegisterAtY(uint8_t value)
+    {
+        uint32_t index = getY();
+        boundCheckRegisters(index);
+        registers[index] = value;
+    };
+
+    inline uint8_t getRegisterAtX()
+    {
+        return registers.at(getX());
+    };
+    
+    inline uint8_t getRegisterAtY()
+    {
+        return registers.at(getY());
+    };
+
+    inline void setFlagRegister(uint8_t value)
+    {
+        registers[0xF] = value;
+    }
 };
 #endif

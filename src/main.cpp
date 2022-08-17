@@ -12,8 +12,6 @@
 
 int main(int argc, char **argv)
 {
-    uint8_t* ptr = 0x0;
-    *ptr = 1;
 
     // init display
     SDL_Init(SDL_INIT_VIDEO);
