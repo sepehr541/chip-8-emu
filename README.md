@@ -6,9 +6,9 @@ This project is an implementation of a [chip-8](https://en.wikipedia.org/wiki/CH
 
 This project requires:
 
-1. C++ compiler
-2. CMake
-3. Conan
+1. C++ compiler (clang or gcc), needs to support C++17
+2. CMake >= 3.22.3 (lower the version in `CMakeLists.txt` if needed)
+3. Conan >= 1.49
 
 ## Building the project
 
@@ -17,10 +17,13 @@ This project requires:
 3. run `cmake ..` to generate the proper build files.
 4. run `make` build the project.
 
+If you are using VSCode, it will detect the `CMakeLists.txt` and configure the project for you.
+
 ### Running the executable
 
-The executable is located at `build/bin/chip-8`.
-NOTE: all the keys (0-F) are mapped to each character on the keyboard (ie 0 is 0, C is C, etc.).
+```Bash
+build/bin/chip-8 <path-to-rom>
+```
 
 ### Copyright
 
