@@ -25,8 +25,8 @@ If you are using VSCode, it will detect the `CMakeLists.txt` and configure the p
 build/bin/chip-8 <path-to-rom>
 ```
 
-### Copyright
+## Copyright
 
-see LICENSE.md for project license.
+see [LICENSE.md](LICENSE.md) for project license.
 
 **All the ROM files are copyrighted by their respective owner and I do NOT own any rights over their work. Please refer to the author.**
