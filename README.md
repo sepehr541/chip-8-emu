@@ -30,3 +30,8 @@ build/bin/chip-8 <path-to-rom>
 see [LICENSE.md](LICENSE.md) for project license.
 
 **All the ROM files are copyrighted by their respective owner and I do NOT own any rights over their work. Please refer to the author.**
+
+## Sources
+
+- <https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/>
+- <https://austinmorlan.com/posts/chip8_emulator/>
